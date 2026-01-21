@@ -72,9 +72,65 @@ function getCategoryById(db, categoryId) {
   });
 }
 
+// Search products with filters and sorting
+function searchProducts(db, options = {}) {
+  return new Promise((resolve, reject) => {
+    const { keyword, categoryId, sortBy = 'name', sortOrder = 'asc', minPrice, maxPrice } = options;
+    
+    let query = 'SELECT * FROM products WHERE 1=1';
+    const params = [];
+    
+    // Add keyword search
+    if (keyword) {
+      query += ' AND (name LIKE ? OR description LIKE ?)';
+      const searchTerm = `%${keyword}%`;
+      params.push(searchTerm, searchTerm);
+    }
+    
+    // Filter by category
+    if (categoryId) {
+      query += ' AND category_id = ?';
+      params.push(categoryId);
+    }
+    
+    // Filter by price range
+    if (minPrice !== undefined) {
+      query += ' AND price >= ?';
+      params.push(minPrice);
+    }
+    if (maxPrice !== undefined) {
+      query += ' AND price <= ?';
+      params.push(maxPrice);
+    }
+    
+    // Add sorting with explicit mapping to prevent SQL injection
+    const sortFieldMap = {
+      'name': 'name',
+      'price': 'price',
+      'created_at': 'created_at'
+    };
+    const sortField = sortFieldMap[sortBy] || 'name';
+    const sortOrderMap = {
+      'desc': 'DESC',
+      'asc': 'ASC'
+    };
+    const order = sortOrderMap[sortOrder.toLowerCase()] || 'ASC';
+    query += ` ORDER BY ${sortField} ${order}`;
+    
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(rows);
+    });
+  });
+}
+
 module.exports = {
   initDatabase,
   getCategories,
   getProductsByCategory,
-  getCategoryById
+  getCategoryById,
+  searchProducts
 };
