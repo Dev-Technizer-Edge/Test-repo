@@ -72,9 +72,57 @@ function getCategoryById(db, categoryId) {
   });
 }
 
+// Search products with filters and sorting
+function searchProducts(db, options = {}) {
+  return new Promise((resolve, reject) => {
+    const { keyword, categoryId, sortBy = 'name', sortOrder = 'asc', minPrice, maxPrice } = options;
+    
+    let query = 'SELECT * FROM products WHERE 1=1';
+    const params = [];
+    
+    // Add keyword search
+    if (keyword) {
+      query += ' AND (name LIKE ? OR description LIKE ?)';
+      const searchTerm = `%${keyword}%`;
+      params.push(searchTerm, searchTerm);
+    }
+    
+    // Filter by category
+    if (categoryId) {
+      query += ' AND category_id = ?';
+      params.push(categoryId);
+    }
+    
+    // Filter by price range
+    if (minPrice !== undefined) {
+      query += ' AND price >= ?';
+      params.push(minPrice);
+    }
+    if (maxPrice !== undefined) {
+      query += ' AND price <= ?';
+      params.push(maxPrice);
+    }
+    
+    // Add sorting
+    const validSortFields = ['name', 'price', 'created_at'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
+    const order = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+    query += ` ORDER BY ${sortField} ${order}`;
+    
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(rows);
+    });
+  });
+}
+
 module.exports = {
   initDatabase,
   getCategories,
   getProductsByCategory,
-  getCategoryById
+  getCategoryById,
+  searchProducts
 };

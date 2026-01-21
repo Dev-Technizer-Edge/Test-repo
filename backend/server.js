@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { initDatabase, getCategories, getProductsByCategory, getCategoryById } = require('./db');
+const { initDatabase, getCategories, getProductsByCategory, getCategoryById, searchProducts } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -58,6 +58,28 @@ app.get('/api/products', async (req, res) => {
   } catch (err) {
     console.error('Error fetching products:', err);
     res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// Search products with filters and sorting
+app.get('/api/products/search', async (req, res) => {
+  try {
+    const { keyword, category, sortBy, sortOrder, minPrice, maxPrice } = req.query;
+    
+    const options = {
+      keyword: keyword || '',
+      categoryId: category,
+      sortBy: sortBy || 'name',
+      sortOrder: sortOrder || 'asc',
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined
+    };
+    
+    const products = await searchProducts(db, options);
+    res.json(products);
+  } catch (err) {
+    console.error('Error searching products:', err);
+    res.status(500).json({ error: 'Failed to search products' });
   }
 });
 

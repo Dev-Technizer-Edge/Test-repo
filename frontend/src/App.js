@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import CategoryNavigation from './components/CategoryNavigation';
 import ProductList from './components/ProductList';
+import SearchBar from './components/SearchBar';
 
 function App() {
   const [categories, setCategories] = useState([]);
@@ -9,6 +10,7 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchActive, setSearchActive] = useState(false);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -58,9 +60,55 @@ function App() {
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
+    setSearchActive(false);
+  };
+
+  const handleSearch = async (searchParams) => {
+    try {
+      setLoading(true);
+      setSearchActive(true);
+      setSelectedCategory(null);
+      
+      const queryParams = new URLSearchParams();
+      
+      if (searchParams.keyword) {
+        queryParams.append('keyword', searchParams.keyword);
+      }
+      if (searchParams.category) {
+        queryParams.append('category', searchParams.category);
+      }
+      if (searchParams.sortBy) {
+        queryParams.append('sortBy', searchParams.sortBy);
+      }
+      if (searchParams.sortOrder) {
+        queryParams.append('sortOrder', searchParams.sortOrder);
+      }
+      if (searchParams.minPrice !== undefined) {
+        queryParams.append('minPrice', searchParams.minPrice);
+      }
+      if (searchParams.maxPrice !== undefined) {
+        queryParams.append('maxPrice', searchParams.maxPrice);
+      }
+      
+      const url = `/api/products/search?${queryParams.toString()}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error('Failed to search products');
+      }
+      
+      const data = await response.json();
+      setProducts(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error searching products:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getSelectedCategoryName = () => {
+    if (searchActive) return 'Search Results';
     if (!selectedCategory) return 'All Products';
     const category = categories.find(c => c.id === selectedCategory);
     return category ? category.name : 'All Products';
@@ -80,6 +128,11 @@ function App() {
         />
         
         <main className="main-content">
+          <SearchBar 
+            onSearch={handleSearch}
+            categories={categories}
+          />
+          
           <h2>{getSelectedCategoryName()}</h2>
           
           {error && (
