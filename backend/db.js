@@ -103,10 +103,18 @@ function searchProducts(db, options = {}) {
       params.push(maxPrice);
     }
     
-    // Add sorting
-    const validSortFields = ['name', 'price', 'created_at'];
-    const sortField = validSortFields.includes(sortBy) ? sortBy : 'name';
-    const order = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+    // Add sorting with explicit mapping to prevent SQL injection
+    const sortFieldMap = {
+      'name': 'name',
+      'price': 'price',
+      'created_at': 'created_at'
+    };
+    const sortField = sortFieldMap[sortBy] || 'name';
+    const sortOrderMap = {
+      'desc': 'DESC',
+      'asc': 'ASC'
+    };
+    const order = sortOrderMap[sortOrder.toLowerCase()] || 'ASC';
     query += ` ORDER BY ${sortField} ${order}`;
     
     db.all(query, params, (err, rows) => {

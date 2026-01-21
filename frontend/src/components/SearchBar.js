@@ -13,13 +13,17 @@ function SearchBar({ onSearch, categories }) {
   const handleSearch = (e) => {
     e.preventDefault();
     
+    // Validate and parse price inputs
+    const parsedMinPrice = minPrice ? parseFloat(minPrice) : undefined;
+    const parsedMaxPrice = maxPrice ? parseFloat(maxPrice) : undefined;
+    
     const searchParams = {
       keyword,
       category: selectedCategory,
       sortBy,
       sortOrder,
-      minPrice: minPrice ? parseFloat(minPrice) : undefined,
-      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined
+      minPrice: !isNaN(parsedMinPrice) ? parsedMinPrice : undefined,
+      maxPrice: !isNaN(parsedMaxPrice) ? parsedMaxPrice : undefined
     };
     
     onSearch(searchParams);
